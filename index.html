@@ -1,0 +1,1210 @@
+```html
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dimitra Joias - Dashboard de Cobranças</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        dimitra: {
+                            light: '#fdfbf7',
+                            DEFAULT: '#d4af37', // Dourado
+                            dark: '#997a00',
+                            navy: '#0f172a',
+                            gray: '#f3f4f6'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4af37; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #997a00; 
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(212, 175, 55, 0.12);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -1px rgba(0, 0, 0, 0.02);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen flex overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <aside class="w-64 bg-dimitra-navy text-white hidden md:flex flex-col h-full shadow-xl z-20 transition-all duration-300 relative" id="sidebar">
+        <!-- Sidebar Header with Logo & Close Stripe Toggle -->
+        <div class="p-5 flex items-center justify-between border-b border-slate-700/50">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-dimitra to-yellow-200 flex items-center justify-center text-dimitra-navy font-bold text-lg shadow-md">
+                    D
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wider text-dimitra-light leading-tight">DIMITRA</h1>
+                    <span class="text-dimitra font-light text-[10px] tracking-[0.25em] block uppercase">Joias</span>
+                </div>
+            </div>
+            <!-- Toggle Sidebar Collapse Button (Riscas) -->
+            <button onclick="toggleSidebarCollapse()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors" title="Recolher / Expandir Menu">
+                <i data-lucide="panel-left-close" class="w-5 h-5"></i>
+            </button>
+        </div>
+        
+        <!-- Navigation Item Links -->
+        <nav class="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto">
+            <a href="javascript:void(0)" onclick="switchView('view-dashboard')" data-target="view-dashboard" class="nav-item flex items-center gap-3 px-3.5 py-2.5 bg-dimitra/10 text-dimitra rounded-xl transition-colors font-medium text-sm">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="javascript:void(0)" onclick="switchView('view-clientes')" data-target="view-clientes" class="nav-item flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/50 hover:text-white rounded-xl transition-colors font-medium text-sm">
+                <i data-lucide="users" class="w-4 h-4"></i>
+                <span>Clientes</span>
+            </a>
+            <a href="javascript:void(0)" onclick="switchView('view-faturas')" data-target="view-faturas" class="nav-item flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/50 hover:text-white rounded-xl transition-colors font-medium text-sm">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+                <span>Faturas</span>
+            </a>
+            <a href="javascript:void(0)" onclick="switchView('view-inadimplentes')" data-target="view-inadimplentes" class="nav-item flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/50 hover:text-white rounded-xl transition-colors font-medium text-sm">
+                <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                <span class="flex-1">Inadimplentes</span>
+            </a>
+            <a href="javascript:void(0)" onclick="switchView('view-catalogo')" data-target="view-catalogo" class="nav-item flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/50 hover:text-white rounded-xl transition-colors font-medium text-sm">
+                <i data-lucide="gem" class="w-4 h-4"></i>
+                <span>Catálogo</span>
+            </a>
+            <a href="javascript:void(0)" onclick="switchView('view-api')" data-target="view-api" class="nav-item flex items-center gap-3 px-3.5 py-2.5 text-slate-300 hover:bg-slate-800/50 hover:text-white rounded-xl transition-colors font-medium text-sm">
+                <i data-lucide="code-2" class="w-4 h-4"></i>
+                <span class="flex-1">Integração API</span>
+                <span class="text-[9px] bg-dimitra/20 text-dimitra px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">DEV</span>
+            </a>
+        </nav>
+
+        <!-- User Profile Footer -->
+        <div class="p-3 border-t border-slate-700/50">
+            <div class="flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-800/40">
+                <div class="w-8 h-8 rounded-full border border-dimitra/40 bg-dimitra/20 flex items-center justify-center text-dimitra-light font-bold text-xs">AS</div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-xs font-semibold text-white truncate">Ana Souza</p>
+                    <p class="text-[10px] text-slate-400">Financeiro</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Workspace Area -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 relative">
+        
+        <!-- Top App Bar -->
+        <header class="bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-10 px-4 sm:px-6 py-3.5 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <!-- Mobile Menu Button (Três Riscas / Menu Hambúrguer) -->
+                <button id="mobileMenuBtn" onclick="toggleMobileMenu()" class="md:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200" title="Abrir Menu">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+
+                <!-- Search Bar -->
+                <div class="hidden sm:flex items-center bg-slate-100/80 rounded-xl px-3.5 py-2 w-64 md:w-80 border border-slate-200 focus-within:border-dimitra focus-within:ring-1 focus-within:ring-dimitra transition-all">
+                    <i data-lucide="search" class="w-4 h-4 text-slate-400"></i>
+                    <input type="text" placeholder="Buscar cliente, CPF ou fatura..." class="bg-transparent border-none outline-none text-xs w-full ml-2 text-slate-700 placeholder-slate-400">
+                </div>
+            </div>
+            
+            <!-- Header Quick Actions -->
+            <div class="flex items-center gap-2 sm:gap-3">
+                <button onclick="openModal('modalGerarFatura')" class="bg-gradient-to-r from-dimitra to-yellow-500 hover:from-dimitra-dark hover:to-dimitra text-slate-950 font-bold text-xs py-2 px-3 sm:px-4 rounded-xl flex items-center gap-1.5 transition-all shadow-md shadow-dimitra/20 active:scale-95">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    <span class="hidden sm:inline">Nova Cobrança</span>
+                    <span class="sm:hidden">Cobrar</span>
+                </button>
+                <button onclick="openModal('modalGerarPix')" class="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all shadow-sm shadow-emerald-600/20">
+                    <i data-lucide="qr-code" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">Gerar PIX</span>
+                </button>
+                <button onclick="openModal('modalCobrarCartao')" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs py-2 px-3 rounded-xl flex items-center gap-1.5 transition-all shadow-sm shadow-indigo-600/20">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">Link Cartão</span>
+                    <span class="md:hidden">Cartão</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Scrollable Views Content -->
+        <div class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            
+            <div id="view-dashboard" class="view-section block">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Visão Geral de Cobranças</h2>
+                        <p class="text-slate-500 text-xs mt-0.5">Acompanhamento e emissão de cobranças Dimitra Joias</p>
+                    </div>
+                    <div class="flex gap-2">
+                        <select id="filterPeriod" onchange="updateDashboardMetrics()" class="bg-white border border-slate-200 text-slate-700 text-xs rounded-xl focus:ring-dimitra focus:border-dimitra block p-2.5 shadow-sm font-medium">
+                            <option value="este-mes">Este Mês</option>
+                            <option value="mes-passado">Mês Passado</option>
+                            <option value="90-dias">Últimos 90 dias</option>
+                        </select>
+                        <button onclick="openModal('modalGerarRelatorio')" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold py-2.5 px-3.5 rounded-xl flex items-center gap-2 transition-colors shadow-sm">
+                            <i data-lucide="download" class="w-4 h-4 text-dimitra"></i>
+                            <span>Relatórios</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Resumo KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+                    <!-- Total Recebido -->
+                    <div class="glass-card rounded-2xl p-5 relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 mb-1">Total Recebido</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="kpiRecebido">R$ 0,00</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-xl bg-green-100 flex items-center justify-center text-green-600">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-emerald-600 font-medium mt-3 flex items-center gap-1">
+                            <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Faturas quitadas
+                        </p>
+                    </div>
+
+                    <!-- A Receber -->
+                    <div class="glass-card rounded-2xl p-5 relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 mb-1">A Receber (No Prazo)</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="kpiAReceber">R$ 0,00</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
+                                <i data-lucide="clock" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-3 flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i> A vencer nos próximos dias
+                        </p>
+                    </div>
+
+                    <!-- Em Atraso -->
+                    <div class="glass-card rounded-2xl p-5 relative overflow-hidden group border-red-100">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 mb-1">Em Atraso</p>
+                                <h3 class="text-2xl font-bold text-red-600" id="kpiEmAtraso">R$ 0,00</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-xl bg-red-100 flex items-center justify-center text-red-600">
+                                <i data-lucide="alert-triangle" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-red-500 font-medium mt-3 flex items-center gap-1">
+                            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Requer cobrança imediata
+                        </p>
+                    </div>
+
+                    <!-- Acordos -->
+                    <div class="glass-card rounded-2xl p-5 relative overflow-hidden group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <p class="text-xs font-medium text-slate-500 mb-1">Clientes Cadastrados</p>
+                                <h3 class="text-2xl font-bold text-slate-800" id="kpiClientesCount">0</h3>
+                            </div>
+                            <div class="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center text-purple-600">
+                                <i data-lucide="users" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-3 flex items-center gap-1">
+                            <i data-lucide="gem" class="w-3.5 h-3.5 text-dimitra"></i> Carteira de Joias
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Priority Collection Actions Table -->
+                <div class="glass-card rounded-2xl overflow-hidden mb-8">
+                    <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800">Ações Prioritárias de Cobrança</h3>
+                            <p class="text-slate-500 text-xs">Clientes com faturas vencidas aguardando contato.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50/80 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-100">
+                                    <th class="px-6 py-3.5 font-semibold">Cliente</th>
+                                    <th class="px-6 py-3.5 font-semibold">Fatura</th>
+                                    <th class="px-6 py-3.5 font-semibold">Valor Devido</th>
+                                    <th class="px-6 py-3.5 font-semibold">Dias em Atraso</th>
+                                    <th class="px-6 py-3.5 font-semibold">Status do Contato</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboardAtrasadosTbody" class="text-xs divide-y divide-slate-100">
+                                <tr>
+                                    <td colspan="6" class="px-6 py-10 text-center">
+                                        <div class="flex flex-col items-center justify-center text-slate-400">
+                                            <i data-lucide="check-circle-2" class="w-10 h-10 mb-2 text-emerald-400"></i>
+                                            <p class="font-medium text-slate-700 text-sm">Nenhuma pendência crítica!</p>
+                                            <p class="text-xs text-slate-400 mt-0.5">Sua carteira de cobrança está em dia.</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div> <!-- Fim View Dashboard -->
+
+            <div id="view-clientes" class="view-section hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Meus Clientes</h2>
+                        <p class="text-slate-500 text-xs mt-0.5">Gerencie sua carteira de compradores e representantes.</p>
+                    </div>
+                    <button onclick="openModal('modalGerarCliente')" class="bg-dimitra hover:bg-dimitra-dark text-slate-950 text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 transition-all shadow-md shadow-dimitra/20">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>+ Novo Cliente</span>
+                    </button>
+                </div>
+
+                <div id="container-clientes-vazio" class="glass-card rounded-2xl p-12 text-center">
+                    <div class="flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-3 border border-slate-200">
+                            <i data-lucide="users" class="w-7 h-7 text-slate-400"></i>
+                        </div>
+                        <p class="font-bold text-slate-700 text-base">Nenhum cliente cadastrado</p>
+                        <p class="text-xs text-slate-500 mt-1 max-w-sm">Cadastre clientes para emitir faturas, links de cobrança e PIX com agilidade.</p>
+                        <button onclick="openModal('modalGerarCliente')" class="mt-4 px-4 py-2 bg-dimitra/10 text-dimitra hover:bg-dimitra hover:text-slate-950 rounded-xl text-xs font-bold transition-all">
+                            + Cadastrar Primeiro Cliente
+                        </button>
+                    </div>
+                </div>
+
+                <div id="container-clientes-lista" class="hidden grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Cards de Clientes aqui -->
+                </div>
+            </div>
+
+            <div id="view-faturas" class="view-section hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Faturas e Recebimentos</h2>
+                        <p class="text-slate-500 text-xs mt-0.5">Histórico completo de cobranças e faturas emitidas.</p>
+                    </div>
+                    <button onclick="openModal('modalGerarFatura')" class="bg-dimitra hover:bg-dimitra-dark text-slate-950 text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 transition-all shadow-md shadow-dimitra/20">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        <span>Nova Fatura</span>
+                    </button>
+                </div>
+
+                <div id="container-faturas-vazio" class="glass-card rounded-2xl p-12 text-center">
+                    <div class="flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-3 border border-slate-200">
+                            <i data-lucide="file-text" class="w-7 h-7 text-slate-400"></i>
+                        </div>
+                        <p class="font-bold text-slate-700 text-base">Nenhuma fatura gerada</p>
+                        <p class="text-xs text-slate-500 mt-1 max-w-sm">Crie faturas para seus clientes e acompanhe o fluxo financeiro.</p>
+                        <button onclick="openModal('modalGerarFatura')" class="mt-4 px-4 py-2 bg-dimitra/10 text-dimitra hover:bg-dimitra hover:text-slate-950 rounded-xl text-xs font-bold transition-all">
+                            + Gerar Primeira Fatura
+                        </button>
+                    </div>
+                </div>
+
+                <div id="container-faturas-tabela" class="glass-card rounded-2xl overflow-hidden hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-50 text-slate-500 text-[11px] uppercase tracking-wider border-b border-slate-100">
+                                    <th class="px-6 py-3.5 font-semibold">Código</th>
+                                    <th class="px-6 py-3.5 font-semibold">Cliente</th>
+                                    <th class="px-6 py-3.5 font-semibold">Descrição</th>
+                                    <th class="px-6 py-3.5 font-semibold">Valor</th>
+                                    <th class="px-6 py-3.5 font-semibold">Vencimento</th>
+                                    <th class="px-6 py-3.5 font-semibold">Forma</th>
+                                    <th class="px-6 py-3.5 font-semibold">Status</th>
+                                    <th class="px-6 py-3.5 font-semibold text-right">Ação</th>
+                                </tr>
+                            </thead>
+                            <tbody id="faturasTableBody" class="text-xs divide-y divide-slate-100">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-inadimplentes" class="view-section hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Gestão de Inadimplência</h2>
+                        <p class="text-slate-500 text-xs mt-0.5">Acompanhe e renegocie títulos vencidos.</p>
+                    </div>
+                </div>
+                <div class="glass-card rounded-2xl p-12 text-center border-green-100">
+                    <div class="flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center mb-3 border border-green-100">
+                            <i data-lucide="shield-check" class="w-7 h-7 text-emerald-500"></i>
+                        </div>
+                        <p class="font-bold text-slate-800 text-base">Sua carteira está excelente!</p>
+                        <p class="text-xs text-slate-500 mt-1 max-w-md">Não há faturas vencidas sem acerto registrado no momento.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-catalogo" class="view-section hidden">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Catálogo de Joias</h2>
+                        <p class="text-slate-500 text-xs mt-0.5">Gerencie as peças de ouro, prata e gemas disponíveis.</p>
+                    </div>
+                    <button onclick="openModal('modalGerarItem')" class="bg-dimitra hover:bg-dimitra-dark text-slate-950 text-xs font-bold py-2.5 px-4 rounded-xl flex items-center gap-2 transition-all shadow-md shadow-dimitra/20">
+                        <i data-lucide="gem" class="w-4 h-4"></i>
+                        <span>+ Nova Peça</span>
+                    </button>
+                </div>
+
+                <div id="container-catalogo-vazio" class="glass-card rounded-2xl p-12 text-center">
+                    <div class="flex flex-col items-center justify-center text-slate-400">
+                        <div class="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center mb-3 border border-slate-200">
+                            <i data-lucide="gem" class="w-7 h-7 text-slate-400"></i>
+                        </div>
+                        <p class="font-bold text-slate-700 text-base">Catálogo Vazio</p>
+                        <p class="text-xs text-slate-500 mt-1 max-w-sm">Cadastre aneis, colares e pulseiras para selecionar rapidamente na emissão de faturas.</p>
+                        <button onclick="openModal('modalGerarItem')" class="mt-4 px-4 py-2 bg-dimitra/10 text-dimitra hover:bg-dimitra hover:text-slate-950 rounded-xl text-xs font-bold transition-all">
+                            + Adicionar Primeira Peça
+                        </button>
+                    </div>
+                </div>
+
+                <div id="container-catalogo-grid" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                    <!-- Cards do catálogo aqui -->
+                </div>
+            </div>
+
+            <div id="view-api" class="view-section hidden">
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-6 gap-4">
+                    <div>
+                        <div class="flex items-center gap-3">
+                            <h2 class="text-2xl font-bold text-slate-800">Integração API & Gateway</h2>
+                            <span class="bg-emerald-100 text-emerald-800 text-xs font-semibold px-2.5 py-1 rounded-full flex items-center gap-1.5 border border-emerald-200">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> API Online (v1.4)
+                            </span>
+                        </div>
+                        <p class="text-slate-500 text-xs mt-1">Conecte seu sistema ao Gateway de Pagamentos Dimitra Joias.</p>
+                    </div>
+
+                    <div class="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-slate-200 shadow-sm">
+                        <span class="text-xs font-medium text-slate-500 pl-2">Ambiente:</span>
+                        <button id="btnEnvSandbox" onclick="setApiEnvironment('sandbox')" class="px-3 py-1.5 rounded-xl text-xs font-bold transition-all bg-amber-100 text-amber-800 border border-amber-300">
+                            ⚡ Sandbox (Testes)
+                        </button>
+                        <button id="btnEnvProduction" onclick="setApiEnvironment('production')" class="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-600 hover:bg-slate-100 transition-all">
+                            🚀 Produção
+                        </button>
+                    </div>
+                </div>
+
+                <!-- API Credentials Card -->
+                <div class="glass-card rounded-2xl p-6 mb-8 border-dimitra/20">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 mb-5 border-b border-slate-100 gap-4">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 flex items-center gap-2">
+                                <i data-lucide="key-round" class="w-4 h-4 text-dimitra"></i> Chaves de Autenticação
+                            </h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Use no cabeçalho <code class="bg-slate-100 px-1 rounded">Authorization: Bearer {SUA_CHAVE}</code></p>
+                        </div>
+                        <button onclick="rotateApiKeys()" class="text-xs font-semibold px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all flex items-center gap-1.5">
+                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Regenerar Chaves
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chave Privada (Secret Key)</label>
+                            <div class="relative flex items-center">
+                                <input type="password" id="apiKeySecret" value="sk_test_dimitra_8f93a10c72b44919a00e5c" readonly class="w-full bg-slate-900 text-amber-300 font-mono text-xs rounded-xl pl-3 pr-20 py-2.5 border border-slate-800 outline-none">
+                                <div class="absolute right-2 flex items-center gap-1">
+                                    <button onclick="toggleKeyVisibility('apiKeySecret', this)" class="p-1 text-slate-400 hover:text-white"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                                    <button onclick="copyToClipboard('apiKeySecret', 'Chave Privada copiada!')" class="p-1 text-dimitra hover:text-yellow-400"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Chave Pública (Public Key)</label>
+                            <div class="relative flex items-center">
+                                <input type="text" id="apiKeyPublic" value="pk_test_dimitra_9031aef7102" readonly class="w-full bg-slate-900 text-emerald-300 font-mono text-xs rounded-xl pl-3 pr-10 py-2.5 border border-slate-800 outline-none">
+                                <button onclick="copyToClipboard('apiKeyPublic', 'Chave Pública copiada!')" class="absolute right-2 p-1 text-dimitra hover:text-yellow-400"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Webhook Secret Token</label>
+                            <div class="relative flex items-center">
+                                <input type="password" id="apiWebhookSecret" value="whsec_dimitra_3b29c81ef40a7" readonly class="w-full bg-slate-900 text-indigo-300 font-mono text-xs rounded-xl pl-3 pr-20 py-2.5 border border-slate-800 outline-none">
+                                <div class="absolute right-2 flex items-center gap-1">
+                                    <button onclick="toggleKeyVisibility('apiWebhookSecret', this)" class="p-1 text-slate-400 hover:text-white"><i data-lucide="eye" class="w-4 h-4"></i></button>
+                                    <button onclick="copyToClipboard('apiWebhookSecret', 'Webhook Secret copiado!')" class="p-1 text-dimitra hover:text-yellow-400"><i data-lucide="copy" class="w-4 h-4"></i></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Code Examples & Tester -->
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div class="lg:col-span-7 bg-slate-900 rounded-2xl p-5 shadow-xl border border-slate-800 text-slate-100 flex flex-col justify-between">
+                        <div>
+                            <div class="flex flex-wrap items-center justify-between gap-3 pb-3 mb-4 border-b border-slate-800">
+                                <div class="flex items-center gap-2">
+                                    <div class="w-2.5 h-2.5 rounded-full bg-red-500"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-yellow-500"></div>
+                                    <div class="w-2.5 h-2.5 rounded-full bg-green-500"></div>
+                                    <span class="text-xs font-mono text-slate-400 ml-1">https://api.dimitrajoias.com.br/v1</span>
+                                </div>
+
+                                <select id="apiActionSelect" onchange="updateApiCodeSnippets()" class="bg-slate-800 text-amber-300 font-mono text-xs rounded-lg px-2.5 py-1.5 border border-slate-700 outline-none">
+                                    <option value="create_charge">POST /v1/cobrancas (Criar Cobrança)</option>
+                                    <option value="generate_pix">POST /v1/pix/qrcode (Gerar PIX)</option>
+                                    <option value="card_checkout">POST /v1/checkout/link (Link Cartão)</option>
+                                </select>
+                            </div>
+
+                            <div class="flex items-center gap-2 mb-3 overflow-x-auto">
+                                <button onclick="setLangTab('js')" id="langBtn-js" class="lang-tab-btn px-3 py-1 rounded-lg text-xs font-mono bg-dimitra/20 text-dimitra border border-dimitra/40">Node.js</button>
+                                <button onclick="setLangTab('curl')" id="langBtn-curl" class="lang-tab-btn px-3 py-1 rounded-lg text-xs font-mono text-slate-400 hover:bg-slate-800">cURL</button>
+                                <button onclick="setLangTab('python')" id="langBtn-python" class="lang-tab-btn px-3 py-1 rounded-lg text-xs font-mono text-slate-400 hover:bg-slate-800">Python</button>
+                            </div>
+
+                            <div class="relative bg-slate-950 rounded-xl p-4 border border-slate-800 font-mono text-xs overflow-x-auto min-h-[220px]">
+                                <button onclick="copyCurrentCodeSnippet()" class="absolute top-2.5 right-2.5 p-1.5 bg-slate-800 text-slate-300 hover:text-white rounded-lg flex items-center gap-1 text-[10px]">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
+                                </button>
+                                <pre id="apiCodeDisplay" class="text-slate-300 leading-relaxed font-mono whitespace-pre-wrap"></pre>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 glass-card rounded-2xl p-5 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2 border-b border-slate-100 pb-2">
+                                <i data-lucide="play-circle" class="w-5 h-5 text-indigo-600"></i> Sandbox Interactive Tester
+                            </h3>
+                            <div class="space-y-3 mb-4">
+                                <div class="flex gap-2">
+                                    <span id="testerMethodBadge" class="bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-2 rounded-xl flex items-center">POST</span>
+                                    <input type="text" id="testerEndpointInput" value="/v1/cobrancas" readonly class="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-mono text-slate-700 outline-none">
+                                </div>
+                                <textarea id="testerJsonPayload" rows="5" class="w-full bg-slate-900 text-emerald-400 font-mono text-xs p-3 rounded-xl border border-slate-800 outline-none resize-none"></textarea>
+                                <button onclick="runApiTesterSim()" class="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-indigo-600/20">
+                                    <i data-lucide="send" class="w-3.5 h-3.5"></i> Enviar Requisição
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 rounded-xl p-3 border border-slate-800">
+                            <div class="flex items-center justify-between mb-1.5">
+                                <span class="text-[10px] font-mono text-slate-400 uppercase">Resposta</span>
+                                <span id="testerStatusBadge" class="text-[10px] font-bold bg-slate-800 text-slate-400 px-2 py-0.5 rounded">Aguardando...</span>
+                            </div>
+                            <pre id="testerResponseConsole" class="text-[11px] font-mono text-slate-300 bg-slate-950 p-2 rounded-lg max-h-32 overflow-y-auto whitespace-pre-wrap">{ "status": "idle" }</pre>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- Fim View API -->
+
+        </div>
+    </main>
+
+
+    <!-- MODAL 1: Gerar Fatura / Cobrança -->
+    <div id="modalGerarFatura" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modalGerarFatura')"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg relative z-10 overflow-hidden transform transition-all scale-95 opacity-0 modal-card">
+            <!-- Modal Header with Close Button (X / Riscas) -->
+            <div class="bg-slate-900 p-5 text-white flex justify-between items-center border-b border-dimitra/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-dimitra/20 text-dimitra flex items-center justify-center">
+                        <i data-lucide="file-plus" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-base font-bold">Nova Cobrança</h3>
+                        <p class="text-xs text-slate-300">Emita um boleto ou fatura de joias</p>
+                    </div>
+                </div>
+                <!-- Close Button X -->
+                <button onclick="closeModal('modalGerarFatura')" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" title="Fechar Modal">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="formGerarFatura" onsubmit="handleGerarFatura(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Cliente</label>
+                    <div class="flex gap-2">
+                        <select id="faturaClienteSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none" required>
+                            <option value="">Selecione um cliente...</option>
+                        </select>
+                        <button type="button" onclick="closeModal('modalGerarFatura'); openModal('modalGerarCliente');" class="px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold whitespace-nowrap">
+                            + Novo
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Peça do Catálogo (Opcional)</label>
+                    <select id="faturaJoiaSelect" onchange="fillValorFromJoia()" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none">
+                        <option value="">Digitar descrição personalizada...</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Descrição do Item / Fatura</label>
+                    <input type="text" id="faturaDescricaoInput" placeholder="Ex: Anel Solitário Ouro Amarelo 18k" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Valor (R$)</label>
+                        <input type="number" step="0.01" id="faturaValorInput" placeholder="0,00" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Vencimento</label>
+                        <input type="date" id="faturaVencimentoInput" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Forma de Pagamento</label>
+                        <select id="faturaFormaSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none">
+                            <option value="PIX">PIX Dinâmico</option>
+                            <option value="Boleto">Boleto Bancário</option>
+                            <option value="Cartão de Crédito">Cartão de Crédito</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Status Inicial</label>
+                        <select id="faturaStatusSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs focus:ring-dimitra focus:border-dimitra outline-none">
+                            <option value="Pendente">Pendente</option>
+                            <option value="Pago">Pago (À vista)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalGerarFatura')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-dimitra hover:bg-dimitra-dark text-slate-950 font-bold rounded-xl text-xs transition-all shadow-md shadow-dimitra/20">
+                        Gerar Cobrança
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 2: Cadastrar Cliente -->
+    <div id="modalGerarCliente" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modalGerarCliente')"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden transform transition-all scale-95 opacity-0 modal-card">
+            <div class="bg-slate-900 p-5 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="user-plus" class="w-5 h-5 text-dimitra"></i>
+                    <h3 class="text-base font-bold">Cadastrar Novo Cliente</h3>
+                </div>
+                <button onclick="closeModal('modalGerarCliente')" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="formGerarCliente" onsubmit="handleGerarCliente(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome Completo</label>
+                    <input type="text" id="clienteNomeInput" placeholder="Ex: Mariana Ferreira" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-dimitra focus:border-dimitra">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">CPF / CNPJ</label>
+                    <input type="text" id="clienteCpfInput" placeholder="000.000.000-00" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none focus:ring-dimitra focus:border-dimitra">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Telefone / WhatsApp</label>
+                        <input type="tel" id="clientePhoneInput" placeholder="(11) 99999-0000" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">E-mail</label>
+                        <input type="email" id="clienteEmailInput" placeholder="cliente@email.com" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none">
+                    </div>
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalGerarCliente')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-dimitra hover:bg-dimitra-dark text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-dimitra/20">
+                        Salvar Cliente
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 3: Novo Item no Catálogo -->
+    <div id="modalGerarItem" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modalGerarItem')"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden transform transition-all scale-95 opacity-0 modal-card">
+            <div class="bg-slate-900 p-5 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2.5">
+                    <i data-lucide="gem" class="w-5 h-5 text-dimitra"></i>
+                    <h3 class="text-base font-bold">Nova Peça no Catálogo</h3>
+                </div>
+                <button onclick="closeModal('modalGerarItem')" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <form id="formGerarItem" onsubmit="handleGerarItem(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Item / Joia</label>
+                    <input type="text" id="joiaNomeInput" placeholder="Ex: Gargantilha Ouro 18k Diamante" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Categoria</label>
+                        <select id="joiaCategoriaSelect" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none">
+                            <option value="Colar">Colar</option>
+                            <option value="Anel">Anel</option>
+                            <option value="Pulseira">Pulseira</option>
+                            <option value="Brinco">Brinco</option>
+                            <option value="Conjunto">Conjunto</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Preço (R$)</label>
+                        <input type="number" step="0.01" id="joiaPrecoInput" placeholder="1500,00" required class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none font-bold">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Estoque Inicial</label>
+                    <input type="number" id="joiaEstoqueInput" value="1" min="1" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 text-xs outline-none">
+                </div>
+
+                <div class="pt-3 flex justify-end gap-2 border-t border-slate-100">
+                    <button type="button" onclick="closeModal('modalGerarItem')" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-xl">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 bg-dimitra hover:bg-dimitra-dark text-slate-950 font-bold rounded-xl text-xs shadow-md shadow-dimitra/20">
+                        Adicionar ao Catálogo
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL 4: Gerar PIX -->
+    <div id="modalGerarPix" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modalGerarPix')"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden transform transition-all scale-95 opacity-0 modal-card text-center">
+            <div class="bg-emerald-600 p-4 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="qr-code" class="w-5 h-5"></i>
+                    <h3 class="text-sm font-bold">PIX Dinâmico Instantâneo</h3>
+                </div>
+                <button onclick="closeModal('modalGerarPix')" class="text-emerald-100 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div class="bg-slate-50 p-4 rounded-2xl border border-slate-100 flex flex-col items-center">
+                    <div class="w-44 h-44 bg-white p-2 rounded-xl shadow-inner border border-slate-200 flex items-center justify-center">
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=00020126580014BR.GOV.BCB.PIX0136dimitrajoias" alt="QR Code PIX" class="w-full h-full object-contain">
+                    </div>
+                    <span class="text-[10px] text-slate-400 mt-2 flex items-center gap-1"><i data-lucide="clock" class="w-3 h-3"></i> Válido por 60 minutos</span>
+                </div>
+
+                <button onclick="copyPixCode()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>Copiar Chave Copia e Cola</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 5: Link Cartão -->
+    <div id="modalCobrarCartao" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modalCobrarCartao')"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden transform transition-all scale-95 opacity-0 modal-card text-center">
+            <div class="bg-indigo-600 p-4 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="credit-card" class="w-5 h-5"></i>
+                    <h3 class="text-sm font-bold">Link de Pagamento Cartão</h3>
+                </div>
+                <button onclick="closeModal('modalCobrarCartao')" class="text-indigo-100 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase text-left mb-1">Parcelamento Autorizado</label>
+                    <select class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-700 outline-none">
+                        <option>Até 3x sem juros</option>
+                        <option selected>Até 10x sem juros</option>
+                        <option>Até 12x com acréscimo</option>
+                    </select>
+                </div>
+
+                <button onclick="copyCartaoLink()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-indigo-600/20">
+                    <i data-lucide="link" class="w-4 h-4"></i>
+                    <span>Copiar Link de Pagamento</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 6: Gerar Relatório -->
+    <div id="modalGerarRelatorio" class="modal-backdrop fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal('modalGerarRelatorio')"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden transform transition-all scale-95 opacity-0 modal-card">
+            <div class="bg-slate-900 p-5 text-white flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="file-spread-sheet" class="w-5 h-5 text-dimitra"></i>
+                    <h3 class="text-base font-bold">Gerar Relatório Financeiro</h3>
+                </div>
+                <button onclick="closeModal('modalGerarRelatorio')" class="text-slate-400 hover:text-white transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-600">Selecione o formato para exportar os lançamentos do mês atual:</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <button onclick="downloadReport('PDF')" class="p-3 border border-slate-200 hover:border-dimitra rounded-xl text-xs font-semibold text-slate-700 flex flex-col items-center gap-2 hover:bg-slate-50 transition-all">
+                        <i data-lucide="file-text" class="w-6 h-6 text-red-500"></i> Relatório PDF
+                    </button>
+                    <button onclick="downloadReport('Excel')" class="p-3 border border-slate-200 hover:border-dimitra rounded-xl text-xs font-semibold text-slate-700 flex flex-col items-center gap-2 hover:bg-slate-50 transition-all">
+                        <i data-lucide="table" class="w-6 h-6 text-emerald-600"></i> Planilha Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-900 text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3 border border-slate-700 pointer-events-none">
+        <div id="toastIcon" class="w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">✓</div>
+        <div>
+            <p id="toastTitle" class="text-xs font-semibold text-white">Sucesso</p>
+            <p id="toastMessage" class="text-[11px] text-slate-300">Ação executada com sucesso.</p>
+        </div>
+    </div>
+
+    <script>
+        // State Store
+        const state = {
+            clientes: [],
+            faturas: [],
+            catalogo: [],
+            currentApiLang: 'js',
+            apiEnv: 'sandbox'
+        };
+
+        // Navigation Switcher Function
+        function switchView(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => {
+                el.classList.add('hidden');
+                el.classList.remove('block');
+            });
+            const selected = document.getElementById(viewId);
+            if (selected) {
+                selected.classList.remove('hidden');
+                selected.classList.add('block');
+            }
+
+            document.querySelectorAll('.nav-item').forEach(nav => {
+                if (nav.getAttribute('data-target') === viewId) {
+                    nav.classList.add('bg-dimitra/10', 'text-dimitra');
+                    nav.classList.remove('text-slate-300', 'hover:bg-slate-800/50');
+                } else {
+                    nav.classList.remove('bg-dimitra/10', 'text-dimitra');
+                    nav.classList.add('text-slate-300', 'hover:bg-slate-800/50');
+                }
+            });
+
+            if (viewId === 'view-api') {
+                updateApiCodeSnippets();
+            }
+
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // Toggle Sidebar Desktop Collapse
+        function toggleSidebarCollapse() {
+            const sidebar = document.getElementById('sidebar');
+            if (sidebar.classList.contains('w-64')) {
+                sidebar.classList.remove('w-64');
+                sidebar.classList.add('w-20');
+                sidebar.querySelectorAll('span').forEach(s => s.classList.add('hidden'));
+            } else {
+                sidebar.classList.remove('w-20');
+                sidebar.classList.add('w-64');
+                sidebar.querySelectorAll('span').forEach(s => s.classList.remove('hidden'));
+            }
+        }
+
+        // Toggle Mobile Menu
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('flex');
+            sidebar.classList.toggle('fixed');
+            sidebar.classList.toggle('inset-y-0');
+            sidebar.classList.toggle('left-0');
+        }
+
+        // Modal Controls
+        function openModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            if (modalId === 'modalGerarFatura') {
+                updateFaturaSelects();
+            }
+            modal.classList.remove('hidden');
+            const card = modal.querySelector('.modal-card');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (!modal) return;
+            const card = modal.querySelector('.modal-card');
+            if (card) {
+                card.classList.remove('scale-100', 'opacity-100');
+                card.classList.add('scale-95', 'opacity-0');
+            }
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 200);
+        }
+
+        // Toast Helper
+        function showToast(title, message, isSuccess = true) {
+            const toast = document.getElementById('toastNotification');
+            const toastTitle = document.getElementById('toastTitle');
+            const toastMsg = document.getElementById('toastMessage');
+            const toastIcon = document.getElementById('toastIcon');
+
+            toastTitle.textContent = title;
+            toastMsg.textContent = message;
+
+            if(isSuccess) {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs';
+                toastIcon.textContent = '✓';
+            } else {
+                toastIcon.className = 'w-7 h-7 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center font-bold text-xs';
+                toastIcon.textContent = '!';
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Handlers
+        function handleGerarCliente(e) {
+            e.preventDefault();
+            const nome = document.getElementById('clienteNomeInput').value.trim();
+            const cpf = document.getElementById('clienteCpfInput').value.trim();
+            const phone = document.getElementById('clientePhoneInput').value.trim();
+            const email = document.getElementById('clienteEmailInput').value.trim();
+
+            const novoCliente = {
+                id: 'CLI-' + Math.floor(1000 + Math.random() * 9000),
+                nome, cpf, phone, email
+            };
+
+            state.clientes.push(novoCliente);
+            document.getElementById('formGerarCliente').reset();
+            closeModal('modalGerarCliente');
+            renderClientes();
+            updateDashboardMetrics();
+            showToast("Cliente Cadastrado", `${nome} foi adicionado(a) com sucesso!`);
+        }
+
+        function handleGerarItem(e) {
+            e.preventDefault();
+            const nome = document.getElementById('joiaNomeInput').value.trim();
+            const categoria = document.getElementById('joiaCategoriaSelect').value;
+            const preco = parseFloat(document.getElementById('joiaPrecoInput').value) || 0;
+            const estoque = parseInt(document.getElementById('joiaEstoqueInput').value) || 1;
+
+            const novoItem = {
+                id: 'JOIA-' + Math.floor(100 + Math.random() * 900),
+                nome, categoria, preco, estoque
+            };
+
+            state.catalogo.push(novoItem);
+            document.getElementById('formGerarItem').reset();
+            closeModal('modalGerarItem');
+            renderCatalogo();
+            showToast("Item Cadastrado", `${nome} adicionado ao catálogo.`);
+        }
+
+        function handleGerarFatura(e) {
+            e.preventDefault();
+            const clienteId = document.getElementById('faturaClienteSelect').value;
+            const clienteObj = state.clientes.find(c => c.id === clienteId);
+            const clienteNome = clienteObj ? clienteObj.nome : "Cliente Diverso";
+            
+            const descricao = document.getElementById('faturaDescricaoInput').value.trim();
+            const valor = parseFloat(document.getElementById('faturaValorInput').value) || 0;
+            const vencimento = document.getElementById('faturaVencimentoInput').value;
+            const forma = document.getElementById('faturaFormaSelect').value;
+            const status = document.getElementById('faturaStatusSelect').value;
+
+            const novaFatura = {
+                id: 'FAT-' + Math.floor(10000 + Math.random() * 90000),
+                clienteNome, descricao, valor,
+                vencimento: vencimento.split('-').reverse().join('/'),
+                forma, status, diasAtraso: 0
+            };
+
+            state.faturas.push(novaFatura);
+            document.getElementById('formGerarFatura').reset();
+            closeModal('modalGerarFatura');
+            renderFaturas();
+            updateDashboardMetrics();
+            showToast("Cobrança Emitida", `Fatura para ${clienteNome} no valor de R$ ${valor.toFixed(2)} foi gerada.`);
+        }
+
+        function updateFaturaSelects() {
+            const clienteSelect = document.getElementById('faturaClienteSelect');
+            clienteSelect.innerHTML = '<option value="">Selecione um cliente...</option>';
+            state.clientes.forEach(c => {
+                clienteSelect.innerHTML += `<option value="${c.id}">${c.nome} (${c.cpf})</option>`;
+            });
+
+            const joiaSelect = document.getElementById('faturaJoiaSelect');
+            joiaSelect.innerHTML = '<option value="">Digitar descrição personalizada...</option>';
+            state.catalogo.forEach(j => {
+                joiaSelect.innerHTML += `<option value="${j.id}" data-nome="${j.nome}" data-preco="${j.preco}">${j.categoria}: ${j.nome} - R$ ${j.preco.toFixed(2)}</option>`;
+            });
+        }
+
+        function fillValorFromJoia() {
+            const joiaSelect = document.getElementById('faturaJoiaSelect');
+            const selectedOption = joiaSelect.options[joiaSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                document.getElementById('faturaDescricaoInput').value = selectedOption.getAttribute('data-nome');
+                document.getElementById('faturaValorInput').value = selectedOption.getAttribute('data-preco');
+            }
+        }
+
+        function renderClientes() {
+            const vazio = document.getElementById('container-clientes-vazio');
+            const lista = document.getElementById('container-clientes-lista');
+
+            if (state.clientes.length === 0) {
+                vazio.classList.remove('hidden');
+                lista.classList.add('hidden');
+            } else {
+                vazio.classList.add('hidden');
+                lista.classList.remove('hidden');
+                lista.innerHTML = state.clientes.map(c => `
+                    <div class="glass-card rounded-2xl p-5 border-slate-100">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="w-9 h-9 rounded-full bg-dimitra/10 text-dimitra font-bold flex items-center justify-center text-xs">
+                                ${c.nome.substring(0,2).toUpperCase()}
+                            </div>
+                            <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-mono">${c.id}</span>
+                        </div>
+                        <h4 class="font-bold text-slate-800 text-sm mb-1">${c.nome}</h4>
+                        <p class="text-xs text-slate-500">${c.cpf} | ${c.phone}</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderCatalogo() {
+            const vazio = document.getElementById('container-catalogo-vazio');
+            const grid = document.getElementById('container-catalogo-grid');
+
+            if (state.catalogo.length === 0) {
+                vazio.classList.remove('hidden');
+                grid.classList.add('hidden');
+            } else {
+                vazio.classList.add('hidden');
+                grid.classList.remove('hidden');
+                grid.innerHTML = state.catalogo.map(j => `
+                    <div class="glass-card rounded-2xl p-5 flex flex-col justify-between">
+                        <div>
+                            <span class="text-[9px] font-bold uppercase tracking-wider bg-dimitra/10 text-dimitra px-2 py-0.5 rounded-full">${j.categoria}</span>
+                            <h4 class="font-bold text-slate-800 text-sm mt-2">${j.nome}</h4>
+                            <p class="text-base font-extrabold text-slate-900 mt-1">R$ ${j.preco.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function renderFaturas() {
+            const vazio = document.getElementById('container-faturas-vazio');
+            const tabelaContainer = document.getElementById('container-faturas-tabela');
+            const tbody = document.getElementById('faturasTableBody');
+
+            if (state.faturas.length === 0) {
+                vazio.classList.remove('hidden');
+                tabelaContainer.classList.add('hidden');
+            } else {
+                vazio.classList.add('hidden');
+                tabelaContainer.classList.remove('hidden');
+                tbody.innerHTML = state.faturas.map(f => `
+                    <tr class="hover:bg-slate-50 transition-colors">
+                        <td class="px-6 py-3.5 font-mono text-xs font-bold text-slate-600">${f.id}</td>
+                        <td class="px-6 py-3.5 font-semibold text-slate-800">${f.clienteNome}</td>
+                        <td class="px-6 py-3.5 text-slate-600 text-xs">${f.descricao}</td>
+                        <td class="px-6 py-3.5 font-bold text-slate-800">R$ ${f.valor.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                        <td class="px-6 py-3.5 text-xs text-slate-500">${f.vencimento}</td>
+                        <td class="px-6 py-3.5 text-xs text-slate-500">${f.forma}</td>
+                        <td class="px-6 py-3.5"><span class="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full">${f.status}</span></td>
+                        <td class="px-6 py-3.5 text-right"><button onclick="marcarComoPago('${f.id}')" class="text-xs text-emerald-600 font-bold hover:underline">Dar Baixa</button></td>
+                    </tr>
+                `).join('');
+            }
+        }
+
+        function marcarComoPago(faturaId) {
+            const fatura = state.faturas.find(f => f.id === faturaId);
+            if (fatura) {
+                fatura.status = 'Pago';
+                renderFaturas();
+                updateDashboardMetrics();
+                showToast("Fatura Quitada", `Fatura ${faturaId} alterada para PAGO.`);
+            }
+        }
+
+        function updateDashboardMetrics() {
+            let totalRecebido = 0, totalAReceber = 0, totalEmAtraso = 0;
+            state.faturas.forEach(f => {
+                if (f.status === 'Pago') totalRecebido += f.valor;
+                else if (f.status === 'Em Atraso') totalEmAtraso += f.valor;
+                else totalAReceber += f.valor;
+            });
+
+            document.getElementById('kpiRecebido').textContent = `R$ ${totalRecebido.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiAReceber').textContent = `R$ ${totalAReceber.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiEmAtraso').textContent = `R$ ${totalEmAtraso.toLocaleString('pt-BR', {minimumFractionDigits: 2})}`;
+            document.getElementById('kpiClientesCount').textContent = state.clientes.length;
+        }
+
+        // API Code Generator Helpers
+        function setLangTab(lang) {
+            state.currentApiLang = lang;
+            document.querySelectorAll('.lang-tab-btn').forEach(b => b.className = "lang-tab-btn px-3 py-1 rounded-lg text-xs font-mono text-slate-400 hover:bg-slate-800");
+            document.getElementById(`langBtn-${lang}`).className = "lang-tab-btn px-3 py-1 rounded-lg text-xs font-mono bg-dimitra/20 text-dimitra border border-dimitra/40";
+            updateApiCodeSnippets();
+        }
+
+        function updateApiCodeSnippets() {
+            const action = document.getElementById('apiActionSelect').value;
+            const lang = state.currentApiLang;
+            const key = document.getElementById('apiKeySecret').value;
+            const display = document.getElementById('apiCodeDisplay');
+
+            if (lang === 'js') {
+                display.textContent = `const res = await fetch('https://api.dimitrajoias.com.br/v1/${action}', {\n  method: 'POST',\n  headers: { 'Authorization': 'Bearer ${key}', 'Content-Type': 'application/json' },\n  body: JSON.stringify({ valor: 1500.00, moeda: "BRL" })\n});\nconst data = await res.json();`;
+            } else {
+                display.textContent = `curl -X POST https://api.dimitrajoias.com.br/v1/${action} \\\n  -H "Authorization: Bearer ${key}" \\\n  -d '{"valor": 1500.00}'`;
+            }
+        }
+
+        function toggleKeyVisibility(id, btn) {
+            const inp = document.getElementById(id);
+            if (inp.type === 'password') { inp.type = 'text'; }
+            else { inp.type = 'password'; }
+        }
+
+        function copyToClipboard(id, msg) {
+            const inp = document.getElementById(id);
+            navigator.clipboard.writeText(inp.value);
+            showToast("Copiado!", msg);
+        }
+
+        function copyCurrentCodeSnippet() {
+            const text = document.getElementById('apiCodeDisplay').textContent;
+            navigator.clipboard.writeText(text);
+            showToast("Código Copiado", "Trecho de código copiado com sucesso.");
+        }
+
+        function setApiEnvironment(env) {
+            state.apiEnv = env;
+            showToast("Ambiente Alternado", `Modo ${env.toUpperCase()} ativado.`);
+            updateApiCodeSnippets();
+        }
+
+        function rotateApiKeys() {
+            document.getElementById('apiKeySecret').value = "sk_test_dimitra_" + Math.random().toString(16).substring(2, 10);
+            showToast("Chaves Regeneradas", "Suas novas chaves de testes foram geradas.");
+        }
+
+        function runApiTesterSim() {
+            const consoleBox = document.getElementById('testerResponseConsole');
+            consoleBox.textContent = JSON.stringify({ status: 200, message: "Sucesso!", created_at: new Date().toISOString() }, null, 2);
+            showToast("Requisição Executada", "Servidor respondeu com 200 OK.");
+        }
+
+        function copyPixCode() {
+            showToast("PIX Copiado", "Código Copia e Cola copiado!");
+            closeModal('modalGerarPix');
+        }
+
+        function copyCartaoLink() {
+            showToast("Link Copiado", "Link para checkout com Cartão enviado!");
+            closeModal('modalCobrarCartao');
+        }
+
+        function downloadReport(format = 'PDF') {
+            closeModal('modalGerarRelatorio');
+            showToast("Baixando Relatório", `Gerando arquivo ${format}...`);
+        }
+
+        // Init Lucide
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) lucide.createIcons();
+            updateApiCodeSnippets();
+        });
+    </script>
+</body>
+</html>
+
+```
